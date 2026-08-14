@@ -1,4 +1,36 @@
 from pydantic import BaseModel, EmailStr, Field, field_validator
+from enum import StrEnum
+
+
+class EmailCodePurpose(StrEnum):
+    REGISTER = "register"
+    LOGIN = "login"
+
+
+class SendEmailCodeRequest(BaseModel):
+    email: EmailStr
+    purpose: EmailCodePurpose
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, value: str) -> str:
+        return value.strip().lower()
+
+
+class MessageResponse(BaseModel):
+    message: str
+
+
+class EmailCodeLoginRequest(BaseModel):
+    email: EmailStr
+    email_code: str = Field(
+        pattern=r"^\d{6}$",
+    )
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, value: str) -> str:
+        return value.strip().lower()
 
 
 class RegisterRequest(BaseModel):
@@ -14,6 +46,9 @@ class RegisterRequest(BaseModel):
     confirm_password: str = Field(
         min_length=8,
         max_length=72,
+    )
+    email_code: str = Field(
+        pattern=r"^\d{6}$",
     )
 
     @field_validator("username")

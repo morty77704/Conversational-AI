@@ -1,7 +1,12 @@
 from unittest.mock import patch
+
 from pymysql.err import IntegrityError
+
 from common.password_util import verify_password
-from users.entity.user_entity import RegisterRequest
+from users.entity.user_entity import (
+    EmailCodePurpose,
+    RegisterRequest,
+)
 from users.service.user_service import register_user
 
 
@@ -10,14 +15,19 @@ request = RegisterRequest(
     email="TEST@example.com",
     password="test-password-123",
     confirm_password="test-password-123",
+    email_code="123456",
 )
 
 
+# 正常注册：先验证邮箱验证码，再哈希密码并创建用户。
 with (
     patch(
         "users.service.user_service.email_exists",
         return_value=False,
     ),
+    patch(
+        "users.service.user_service.verify_email_code",
+    ) as verify_code_mock,
     patch(
         "users.service.user_service.create_user",
         return_value={
@@ -30,6 +40,12 @@ with (
 ):
     result = register_user(request)
 
+    verify_code_mock.assert_called_once_with(
+        email="test@example.com",
+        purpose=EmailCodePurpose.REGISTER,
+        submitted_code="123456",
+    )
+
     create_arguments = create_user_mock.call_args.kwargs
     saved_hash = create_arguments["password_hash"]
 
@@ -39,14 +55,16 @@ with (
     assert verify_password(request.password, saved_hash)
     assert "password_hash" not in result.model_dump()
 
-    print("正常注册测试通过")
 
-# 情况一：预检查已经发现邮箱存在
+# 预检查发现邮箱存在时，不验证验证码，也不创建用户。
 with (
     patch(
         "users.service.user_service.email_exists",
         return_value=True,
     ),
+    patch(
+        "users.service.user_service.verify_email_code",
+    ) as verify_code_mock,
     patch(
         "users.service.user_service.create_user",
     ) as create_user_mock,
@@ -57,15 +75,41 @@ with (
     except ValueError as error:
         assert str(error) == "邮箱已注册"
 
-    assert not create_user_mock.called
-    print("邮箱预检查测试通过")
+    verify_code_mock.assert_not_called()
+    create_user_mock.assert_not_called()
 
 
-# 情况二：预检查通过，但 INSERT 时发生唯一键冲突
+# 验证码错误时，不创建用户。
 with (
     patch(
         "users.service.user_service.email_exists",
         return_value=False,
+    ),
+    patch(
+        "users.service.user_service.verify_email_code",
+        side_effect=ValueError("验证码错误"),
+    ),
+    patch(
+        "users.service.user_service.create_user",
+    ) as create_user_mock,
+):
+    try:
+        register_user(request)
+        assert False, "验证码错误时不应注册"
+    except ValueError as error:
+        assert str(error) == "验证码错误"
+
+    create_user_mock.assert_not_called()
+
+
+# 预检查和验证码均通过，但 INSERT 仍可能因并发产生唯一键冲突。
+with (
+    patch(
+        "users.service.user_service.email_exists",
+        return_value=False,
+    ),
+    patch(
+        "users.service.user_service.verify_email_code",
     ),
     patch(
         "users.service.user_service.create_user",
@@ -81,4 +125,5 @@ with (
     except ValueError as error:
         assert str(error) == "邮箱已注册"
 
-    print("数据库唯一键冲突测试通过")
+
+print("用户注册 Service 测试通过")

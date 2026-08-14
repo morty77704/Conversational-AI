@@ -55,6 +55,14 @@ class Settings(BaseSettings):
     redis_password: str = ""
     redis_connect_timeout: int = 5
     redis_socket_timeout: int = 5
+    # SMTP 邮件配置
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_sender_email: str = ""
+    smtp_use_ssl: bool = False
+    smtp_timeout: int = 10
 
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",              # 保证从不同工作目录启动时仍能找到 .env。

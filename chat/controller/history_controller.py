@@ -9,11 +9,13 @@ from chat.entity.conversation_entity import (
     ConversationDetail,
     ConversationSummary,
     DeleteConversationResponse,
+    RenameConversationRequest,
 )
 from chat.service.history_service import (
     delete_conversation,
     get_conversation,
     list_conversations,
+    rename_conversation,
 )
 from users.entity.user_entity import UserResponse
 from users.service.auth_service import get_current_user
@@ -70,6 +72,30 @@ def delete_conversation_endpoint(
         return delete_conversation(
             user_id=current_user.id,
             conversation_id=conversation_id,
+        )
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(error),
+        ) from error
+
+
+@history_router.patch(
+    "/history/conversations/{conversation_id}",
+    response_model=ConversationSummary,
+)
+def rename_conversation_endpoint(
+    conversation_id: int,
+    request: RenameConversationRequest,
+    current_user: UserResponse = Depends(
+        get_current_user
+    ),
+) -> ConversationSummary:
+    try:
+        return rename_conversation(
+            user_id=current_user.id,
+            conversation_id=conversation_id,
+            title=request.title,
         )
     except ValueError as error:
         raise HTTPException(
