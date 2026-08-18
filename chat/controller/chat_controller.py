@@ -15,6 +15,9 @@ from chat.service.chat_service import (
 )
 from chat.service.intent_service import classify_intent
 from chat.service.history_service import build_history_text
+from chat.service.memory_service import (
+    refresh_conversation_memory,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +80,19 @@ def generate_chat_events(
             answer=answer,
             conversation_id=conversation_id,
         )
+
+        if conversation_id is not None:
+            try:
+                refresh_conversation_memory(
+                    user_id=user_id,
+                    conversation_id=saved_conversation_id,
+                    recent_limit=10,
+                )
+            except Exception:
+                logger.exception(
+                    "会话长期记忆更新失败：conversation_id=%s",
+                    saved_conversation_id,
+                )
 
         yield format_sse(
             {

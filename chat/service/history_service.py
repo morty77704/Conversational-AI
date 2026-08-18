@@ -1,4 +1,5 @@
 from chat.dao.conversation_dao import (
+    get_conversation_memory,
     get_conversation_detail,
     get_conversation_list,
     get_recent_messages,
@@ -19,6 +20,14 @@ def build_history_text(
     if conversation_id is None:
         return "暂无历史对话"
 
+    memory = get_conversation_memory(
+        user_id=user_id,
+        conversation_id=conversation_id,
+    )
+
+    if memory is None:
+        raise ValueError("会话不存在")
+
     messages = get_recent_messages(
         user_id=user_id,
         conversation_id=conversation_id,
@@ -28,14 +37,11 @@ def build_history_text(
     if messages is None:
         raise ValueError("会话不存在")
 
-    if not messages:
-        return "暂无历史对话"
-
     history_parts: list[str] = []
 
     for message in messages:
-        role = message["role"]
-        content = message["content"]
+        role = message.get("role")
+        content = message.get("content")
 
         if role == "user":
             role_name = "用户"
@@ -44,11 +50,35 @@ def build_history_text(
         else:
             continue
 
+        if not isinstance(content, str):
+            continue
+
+        cleaned_content = content.strip()
+
+        if not cleaned_content:
+            continue
+
         history_parts.append(
-            f"{role_name}：{content}"
+            f"{role_name}：{cleaned_content}"
         )
 
-    return "\n".join(history_parts) or "暂无历史对话"
+    memory_summary = memory.get("memory_summary")
+    cleaned_summary = (
+        memory_summary.strip()
+        if isinstance(memory_summary, str)
+        else ""
+    )
+    recent_history = "\n".join(history_parts)
+
+    if not cleaned_summary and not recent_history:
+        return "暂无历史对话"
+
+    return (
+        "长期记忆摘要：\n"
+        f"{cleaned_summary or '无'}\n\n"
+        "最近对话：\n"
+        f"{recent_history or '无'}"
+    )
 
 
 def list_conversations(

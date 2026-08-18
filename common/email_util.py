@@ -26,6 +26,7 @@ def send_email_code(
     message["To"] = recipient_email.strip().lower()
     message["Subject"] = "Conversational AI 邮箱验证码"
 
+    # 将秒钟转换成分钟，方便邮件中阅读
     expires_minutes = max(
         1,
         expires_in // 60,
@@ -52,7 +53,7 @@ def send_email_code(
             timeout=settings.smtp_timeout,
         ) as smtp:
             if not settings.smtp_use_ssl:
-                smtp.starttls()
+                smtp.starttls()          # 如果没有建立加密，在此处再次建立加密
 
             smtp.login(
                 settings.smtp_username,

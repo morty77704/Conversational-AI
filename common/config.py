@@ -3,6 +3,7 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# 在当前目录的上一级再上一级目录下找文件，然后转成绝对目录
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -21,6 +22,9 @@ class Settings(BaseSettings):
     # 向量数据库配置
     collection_name: str = "abc_kb_bge_v1"
     chroma_path: Path = BASE_DIR.parent / "runtime" / "chroma"
+    # 离线知识库构建使用的 OCR 配置
+    tesseract_cmd: Path = Path(r"D:\ocr\Tesseract\tesseract.exe")
+    ocr_languages: str = "chi_sim+eng"
     # 重排序模型配置
     reranker_model_path: Path
     reranker_device: str = "cuda"

@@ -23,7 +23,7 @@ def hash_password(password: str) -> str:
 
     password_hash = bcrypt.hashpw(
         password_bytes,
-        bcrypt.gensalt(),
+        bcrypt.gensalt(),  # 生成一个随机盐值
     )
 
     return password_hash.decode("utf-8")

@@ -5,6 +5,7 @@ from pymysql.cursors import DictCursor
 from common.config import get_settings
 
 
+# 不用使用装饰器来缓存创建对象的原因： MySQL Connection 本身具有连接状态和事务状态。
 def get_mysql_connection() -> Connection:
     settings = get_settings()
 
@@ -21,7 +22,7 @@ def get_mysql_connection() -> Connection:
         password=settings.mysql_password,
         database=settings.mysql_database,
         charset=settings.mysql_charset,
-        cursorclass=DictCursor,
-        autocommit=False,
+        cursorclass=DictCursor,  # 让查询结果以字典返回
+        autocommit=False,  # 关闭自动提交，让 DAO 显式控制提交和回滚
         connect_timeout=settings.mysql_connect_timeout,
     )

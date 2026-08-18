@@ -1,0 +1,127 @@
+{
+  "retrieved_at": "2026-08-15",
+  "documents": [
+    {
+      "file": "policies/probation_conversion_policy.md",
+      "metadata": {
+        "doc_id": "ABC-HR-POLICY-1001",
+        "title": "试用期及转正管理办法（学习项目示例）",
+        "topic_key": "probation-conversion",
+        "topic_cn": "试用期与转正管理",
+        "department": "HR",
+        "department_cn": "人力资源部",
+        "owner": "People Operations",
+        "version": "1.0",
+        "effective_date": "2026-08-15",
+        "confidentiality": "Internal",
+        "scope": "中国区正式员工",
+        "document_type": "demo_company_policy",
+        "demo_data": true,
+        "source_urls": [
+          "https://www.mohrss.gov.cn/xxgk2020/fdzdgknr/zcfg/fl/202011/t20201102_394622_wap.html"
+        ]
+      }
+    },
+    {
+      "file": "policies/probation_material_checklist.md",
+      "metadata": {
+        "doc_id": "ABC-HR-CHECKLIST-1002",
+        "title": "转正申请材料清单（学习项目示例）",
+        "topic_key": "probation-conversion",
+        "topic_cn": "试用期与转正管理",
+        "department": "HR",
+        "department_cn": "人力资源部",
+        "owner": "People Operations",
+        "version": "1.0",
+        "effective_date": "2026-08-15",
+        "confidentiality": "Internal",
+        "scope": "中国区正式员工",
+        "document_type": "demo_company_checklist",
+        "demo_data": true
+      }
+    },
+    {
+      "file": "policies/travel_reimbursement_policy.md",
+      "metadata": {
+        "doc_id": "ABC-FIN-POLICY-1001",
+        "title": "差旅及费用报销管理办法（学习项目示例）",
+        "topic_key": "travel-expense",
+        "topic_cn": "差旅与费用报销",
+        "department": "Finance",
+        "department_cn": "财务部",
+        "owner": "Finance Operations",
+        "version": "1.0",
+        "effective_date": "2026-08-15",
+        "confidentiality": "Internal",
+        "scope": "中国区全体员工",
+        "document_type": "demo_company_policy",
+        "demo_data": true,
+        "source_urls": [
+          "https://xzzf.mof.gov.cn/zcfbyjd/201401/t20140106_1033058.htm",
+          "https://www.mof.gov.cn/gkml/caizhengwengao/wg2015/wg201512/201604/t20160421_1959846.htm"
+        ]
+      }
+    },
+    {
+      "file": "policies/travel_expense_standard.md",
+      "metadata": {
+        "doc_id": "ABC-FIN-STANDARD-1002",
+        "title": "差旅费用标准表（学习项目示例）",
+        "topic_key": "travel-expense",
+        "topic_cn": "差旅与费用报销",
+        "department": "Finance",
+        "department_cn": "财务部",
+        "owner": "Finance Operations",
+        "version": "1.0",
+        "effective_date": "2026-08-15",
+        "confidentiality": "Internal",
+        "scope": "中国区全体员工",
+        "document_type": "demo_company_standard",
+        "demo_data": true
+      }
+    },
+    {
+      "file": "policies/leave_attendance_policy.md",
+      "metadata": {
+        "doc_id": "ABC-HR-POLICY-1003",
+        "title": "员工请假、休假与考勤管理制度（学习项目示例）",
+        "topic_key": "leave-attendance",
+        "topic_cn": "请假、休假与考勤",
+        "department": "HR",
+        "department_cn": "人力资源部",
+        "owner": "People Operations",
+        "version": "1.0",
+        "effective_date": "2026-08-15",
+        "confidentiality": "Internal",
+        "scope": "中国区正式员工",
+        "document_type": "demo_company_policy",
+        "demo_data": true,
+        "source_urls": [
+          "https://www.gov.cn/zhengce/content/2008-03/28/content_6636.htm",
+          "https://www.mohrss.gov.cn/xxgk2020/gzk/gz/202112/P020211229590352867273.pdf",
+          "https://www.mohrss.gov.cn/xxgk2020/gzk/gz/202112/P020211229611332535578.pdf",
+          "https://xzfg.moj.gov.cn/law/download?LawID=343&type=pdf"
+        ]
+      }
+    },
+    {
+      "file": "references/official_legal_basis.md",
+      "metadata": {
+        "doc_id": "CN-OFFICIAL-REFERENCE-1001",
+        "title": "试用期、休假与差旅制度的公开依据摘要",
+        "topic_key": "official-policy-reference",
+        "topic_cn": "公开法规与制度参考",
+        "department": "Legal",
+        "department_cn": "法务部",
+        "owner": "Knowledge Curator",
+        "version": "2026-08-15",
+        "effective_date": "2026-08-15",
+        "confidentiality": "Public",
+        "scope": "公开资料参考",
+        "document_type": "official_reference_summary",
+        "demo_data": false
+      }
+    }
+  ]
+}
+

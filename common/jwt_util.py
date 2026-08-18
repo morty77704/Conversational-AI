@@ -13,10 +13,10 @@ def create_access_token(user_id: int) -> dict[str, str | int]:
     if not settings.jwt_secret_key.strip():
         raise ValueError("JWT_SECRET_KEY 未配置")
 
-    now = datetime.now(timezone.utc)
-    expires_in = settings.jwt_access_token_expire_minutes * 60
-    expires_at = now + timedelta(seconds=expires_in)
-    token_id = uuid4().hex
+    now = datetime.now(timezone.utc)  # 记录当前时间
+    expires_in = settings.jwt_access_token_expire_minutes * 60  # 计算token存活时间 30*60=1800 即三十分钟
+    expires_at = now + timedelta(seconds=expires_in)  # 计算具体过期时间
+    token_id = uuid4().hex  #   给token一个唯一编号
 
     payload = {
         "sub": str(user_id),
@@ -39,6 +39,7 @@ def create_access_token(user_id: int) -> dict[str, str | int]:
     }
 
 
+# 验证token函数
 def decode_access_token(token: str) -> dict[str, Any]:
     settings = get_settings()
 

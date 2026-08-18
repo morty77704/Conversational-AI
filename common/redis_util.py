@@ -5,6 +5,7 @@ from redis import Redis
 from common.config import get_settings
 
 
+# 使用装饰器作用是把函数的返回结果缓存起来，从而让后续调用复用同一个对象，而不是重新创建。
 @lru_cache
 def get_redis_client() -> Redis:
     settings = get_settings()

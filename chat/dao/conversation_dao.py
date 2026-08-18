@@ -142,6 +142,141 @@ def get_recent_messages(
         connection.close()
 
 
+def get_conversation_memory(
+        user_id: int,
+        conversation_id: int,
+) -> dict[str, Any] | None:
+    connection = get_mysql_connection()
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT
+                    memory_summary,
+                    summarized_until_message_id,
+                    memory_updated_at
+                FROM conversations
+                WHERE id = %s
+                  AND user_id = %s
+                  AND deleted_at IS NULL
+                LIMIT 1
+                """,
+                (conversation_id, user_id),
+            )
+
+            return cursor.fetchone()
+
+    finally:
+        connection.close()
+
+
+def get_messages_to_summarize(
+        user_id: int,
+        conversation_id: int,
+        recent_limit: int = 10,
+) -> list[dict[str, Any]] | None:
+    if recent_limit <= 0:
+        raise ValueError("recent_limit 必须大于0")
+
+    connection = get_mysql_connection()
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT summarized_until_message_id
+                FROM conversations
+                WHERE id = %s
+                  AND user_id = %s
+                  AND deleted_at IS NULL
+                LIMIT 1
+                """,
+                (conversation_id, user_id),
+            )
+
+            memory_record = cursor.fetchone()
+
+            if memory_record is None:
+                return None
+
+            summarized_until_message_id = (
+                memory_record[
+                    "summarized_until_message_id"
+                ]
+                or 0
+            )
+
+            cursor.execute(
+                """
+                SELECT
+                    id,
+                    role,
+                    content,
+                    created_at
+                FROM messages
+                WHERE conversation_id = %s
+                  AND id > %s
+                ORDER BY created_at DESC, id DESC
+                LIMIT %s, 18446744073709551615
+                """,
+                (
+                    conversation_id,
+                    summarized_until_message_id,
+                    recent_limit,
+                ),
+            )
+
+            messages = list(cursor.fetchall())
+            messages.reverse()
+
+            return messages
+
+    finally:
+        connection.close()
+
+
+def update_conversation_memory(
+        user_id: int,
+        conversation_id: int,
+        memory_summary: str,
+        summarized_until_message_id: int,
+) -> bool:
+    connection = get_mysql_connection()
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                UPDATE conversations
+                SET memory_summary = %s,
+                    summarized_until_message_id = %s,
+                    memory_updated_at = CURRENT_TIMESTAMP
+                WHERE id = %s
+                  AND user_id = %s
+                  AND deleted_at IS NULL
+                """,
+                (
+                    memory_summary,
+                    summarized_until_message_id,
+                    conversation_id,
+                    user_id,
+                ),
+            )
+
+            updated = cursor.rowcount == 1
+
+        connection.commit()
+        return updated
+
+    except Exception:
+        connection.rollback()
+        raise
+
+    finally:
+        connection.close()
+
+
 def get_conversation_list(
         user_id: int,
 ) -> list[dict[str, Any]]:
