@@ -36,14 +36,20 @@ def general_chat(
 def rag_chat(
         question: str,
         history: str = "",
+        retrieval_query: str | None = None,
 ) -> str:
     cleaned_question = question.strip()
 
     if not cleaned_question:
         raise ValueError("问题不能为空")
 
+    cleaned_retrieval_query = (
+        retrieval_query.strip()
+        if retrieval_query and retrieval_query.strip()
+        else cleaned_question
+    )
     ranked_documents = retrieve_and_rerank(
-        cleaned_question
+        cleaned_retrieval_query
     )
     context = build_context(ranked_documents)
 
@@ -90,14 +96,20 @@ def stream_general_chat(
 def stream_rag_chat(
         question: str,
         history: str = "",
+        retrieval_query: str | None = None,
 ) -> Iterator[str]:
     cleaned_question = question.strip()
 
     if not cleaned_question:
         raise ValueError("问题不能为空")
 
+    cleaned_retrieval_query = (
+        retrieval_query.strip()
+        if retrieval_query and retrieval_query.strip()
+        else cleaned_question
+    )
     ranked_documents = retrieve_and_rerank(
-        cleaned_question
+        cleaned_retrieval_query
     )
     context = build_context(ranked_documents)
 

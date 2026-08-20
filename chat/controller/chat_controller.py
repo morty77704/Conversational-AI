@@ -13,7 +13,9 @@ from chat.service.chat_service import (
     stream_general_chat,
     stream_rag_chat,
 )
-from chat.service.intent_service import classify_intent
+from chat.service.contextual_query_service import (
+    analyze_contextual_query,
+)
 from chat.service.history_service import build_history_text
 from chat.service.memory_service import (
     refresh_conversation_memory,
@@ -22,6 +24,11 @@ from chat.service.memory_service import (
 logger = logging.getLogger(__name__)
 
 chat_router = APIRouter()
+
+CONTEXT_CLARIFICATION_MESSAGE = (
+    "我还不能确定你指的是哪项制度或流程，"
+    "请补充具体事项，例如请假、报销或相关文档编号。"
+)
 
 
 def format_sse(data: dict[str, object]) -> str:
@@ -46,9 +53,16 @@ def generate_chat_events(
             conversation_id=conversation_id,
         )
 
-        intent_result = classify_intent(question)
+        query_result = analyze_contextual_query(
+            question=question,
+            history=history,
+        )
 
-        if intent_result.intent == IntentType.GENERAL_CHAT:
+        if not query_result.context_sufficient:
+            answer_stream = iter(
+                [CONTEXT_CLARIFICATION_MESSAGE]
+            )
+        elif query_result.intent == IntentType.GENERAL_CHAT:
             answer_stream = stream_general_chat(
                 question=question,
                 history=history,
@@ -58,6 +72,9 @@ def generate_chat_events(
             answer_stream = stream_rag_chat(
                 question=question,
                 history=history,
+                retrieval_query=(
+                    query_result.standalone_query
+                ),
             )
 
         for chunk in answer_stream:

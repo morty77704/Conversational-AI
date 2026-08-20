@@ -2,10 +2,13 @@ import json
 from unittest.mock import patch
 
 from chat.controller.chat_controller import (
+    CONTEXT_CLARIFICATION_MESSAGE,
     generate_chat_events,
 )
+from chat.entity.contextual_query_entity import (
+    ContextualQueryResult,
+)
 from chat.entity.intent_entity import (
-    IntentResult,
     IntentType,
 )
 
@@ -16,8 +19,12 @@ def parse_sse_event(event: str) -> dict:
     return json.loads(event.removeprefix("data: ").strip())
 
 
-intent_result = IntentResult(
-    intent=IntentType.GENERAL_CHAT
+query_result = ContextualQueryResult(
+    intent=IntentType.GENERAL_CHAT,
+    standalone_query="测试问题",
+    context_sufficient=True,
+    rewrite_needed=False,
+    history_evidence=[],
 )
 
 
@@ -43,8 +50,8 @@ with (
         return_value="mock history",
     ),
     patch(
-        "chat.controller.chat_controller.classify_intent",
-        return_value=intent_result,
+        "chat.controller.chat_controller.analyze_contextual_query",
+        return_value=query_result,
     ),
     patch(
         "chat.controller.chat_controller.stream_general_chat",
@@ -105,8 +112,8 @@ with (
         return_value="暂无历史对话",
     ),
     patch(
-        "chat.controller.chat_controller.classify_intent",
-        return_value=intent_result,
+        "chat.controller.chat_controller.analyze_contextual_query",
+        return_value=query_result,
     ),
     patch(
         "chat.controller.chat_controller.stream_general_chat",
@@ -148,8 +155,8 @@ with (
         return_value="mock history",
     ),
     patch(
-        "chat.controller.chat_controller.classify_intent",
-        return_value=intent_result,
+        "chat.controller.chat_controller.analyze_contextual_query",
+        return_value=query_result,
     ),
     patch(
         "chat.controller.chat_controller.stream_general_chat",
@@ -190,8 +197,8 @@ with (
         return_value="mock history",
     ),
     patch(
-        "chat.controller.chat_controller.classify_intent",
-        return_value=intent_result,
+        "chat.controller.chat_controller.analyze_contextual_query",
+        return_value=query_result,
     ),
     patch(
         "chat.controller.chat_controller.stream_general_chat",
@@ -243,8 +250,8 @@ with (
         return_value="mock history",
     ),
     patch(
-        "chat.controller.chat_controller.classify_intent",
-        return_value=intent_result,
+        "chat.controller.chat_controller.analyze_contextual_query",
+        return_value=query_result,
     ),
     patch(
         "chat.controller.chat_controller.stream_general_chat",
@@ -281,6 +288,112 @@ assert [event["type"] for event in parsed_events] == [
 assert parsed_events[-1]["content"] == "回答生成失败"
 refresh_memory_mock.assert_not_called()
 logger_mock.assert_called_once_with("聊天流生成失败")
+
+
+# RAG 使用上下文改写查询，最终保存用户原始问题。
+rag_query_result = ContextualQueryResult(
+    intent=IntentType.KNOWLEDGE_QUERY,
+    standalone_query="根据公司的年假制度，员工应如何申请年假？",
+    context_sufficient=True,
+    rewrite_needed=True,
+    history_evidence=["公司的年假制度"],
+)
+
+with (
+    patch(
+        "chat.controller.chat_controller.build_history_text",
+        return_value="用户：公司的年假制度是什么？",
+    ),
+    patch(
+        "chat.controller.chat_controller.analyze_contextual_query",
+        return_value=rag_query_result,
+    ),
+    patch(
+        "chat.controller.chat_controller.stream_general_chat",
+    ) as general_stream_mock,
+    patch(
+        "chat.controller.chat_controller.stream_rag_chat",
+        return_value=iter(["申请步骤"]),
+    ) as rag_stream_mock,
+    patch(
+        "chat.controller.chat_controller.save_chat_round",
+        return_value=12,
+    ) as save_round_mock,
+):
+    events = list(
+        generate_chat_events(
+            question="那我现在应该怎么做？",
+            user_id=1,
+            conversation_id=None,
+        )
+    )
+
+assert parse_sse_event(events[0])["content"] == "申请步骤"
+general_stream_mock.assert_not_called()
+rag_stream_mock.assert_called_once_with(
+    question="那我现在应该怎么做？",
+    history="用户：公司的年假制度是什么？",
+    retrieval_query="根据公司的年假制度，员工应如何申请年假？",
+)
+save_round_mock.assert_called_once_with(
+    user_id=1,
+    question="那我现在应该怎么做？",
+    answer="申请步骤",
+    conversation_id=None,
+)
+
+
+# 上下文不足时不盲目检索，而是要求用户补充信息。
+insufficient_query_result = ContextualQueryResult(
+    intent=IntentType.UNCERTAIN,
+    standalone_query="那我现在应该怎么做？",
+    context_sufficient=False,
+    rewrite_needed=True,
+    history_evidence=[],
+)
+
+with (
+    patch(
+        "chat.controller.chat_controller.build_history_text",
+        return_value="暂无历史对话",
+    ),
+    patch(
+        "chat.controller.chat_controller.analyze_contextual_query",
+        return_value=insufficient_query_result,
+    ),
+    patch(
+        "chat.controller.chat_controller.stream_general_chat",
+    ) as general_stream_mock,
+    patch(
+        "chat.controller.chat_controller.stream_rag_chat",
+    ) as rag_stream_mock,
+    patch(
+        "chat.controller.chat_controller.save_chat_round",
+        return_value=13,
+    ) as save_round_mock,
+):
+    events = list(
+        generate_chat_events(
+            question="那我现在应该怎么做？",
+            user_id=1,
+            conversation_id=None,
+        )
+    )
+
+parsed_events = [
+    parse_sse_event(event)
+    for event in events
+]
+assert parsed_events[0]["content"] == CONTEXT_CLARIFICATION_MESSAGE
+assert parsed_events[-1]["type"] == "done"
+general_stream_mock.assert_not_called()
+rag_stream_mock.assert_not_called()
+save_round_mock.assert_called_once_with(
+    user_id=1,
+    question="那我现在应该怎么做？",
+    answer=CONTEXT_CLARIFICATION_MESSAGE,
+    conversation_id=None,
+)
 
 
 print("聊天长期记忆接入测试通过")
